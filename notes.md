@@ -85,5 +85,40 @@ Sum {getSum = 6}
 
 * `Get` is `Fold` without the `Monoid` constraint.
 * In lens library, `Get` = `View` (to avoid naming clash with other libs (store/state?)). This is also why `put` became `over`.
+* `s t a b` ~ source target input_value_type output_value_type
 
+* `over` is "go down a structure, run a function, and modify the structure". Can `over (traverse.traverse) (+1)` to add 1 to a list of list. `set` is go down the structure and replace a value. `fold` is go through a structure using a monoid and append as we go. `get` is go down the structure and get the value once we've found it. `traversal` is go down the structure like a `fold`, but also do modifications. 
+* `over` gives us a view of one thing, `traversal` gives a view of many things.
 
+* Ed on lens and lens laws:
+
+```
+get :: Lens s t a b -> s -> a
+set :: Lens s t a b -> s -> b -> t
+
+get :: Lens' s a -> (s -> a) -- getter
+set :: Lens' s a -> (s -> a -> s) -- setter
+```
+
+Goal: rather than imperative `foo.bar.baz += 10`, we want a functional version for immutable code. In Haskell/lens, can do `foo.bar.baz +~ 10`. Reclaiming imperative notation, but keeping FP. Nice thing is the `.` worked well as field accessor using funtion composition.
+
+Laws:
+
+```
+-- fmap laws:
+fmap id = id
+fmap f . fmap g = fmap (f . g)
+
+-- same for over:
+over l id = id
+over l f . over l g = over l (f . g)
+
+-- lens laws:
+set l s (get l s) = s -- set the value i just got, nothing changes
+get l (set l s a) = a -- if i set something, i'll get that out when i read it
+set l (set l s a) b = set l s b -- setting twice the same as setting once; repeatable, no side effect
+```
+
+* `over` / `Lens`: one thing; `Traversal`: zero or more things (many things); `Prism`: zero or one thing.
+* Ed: wrote this for linear alg, surprised that everyone wanted it for CRUD apps.
+* `Traversal` is generalised to any `Applicative`. `Set` and `Fold` used `Identity` and `Const` applicatives, now we're talking about any `Applicative`.

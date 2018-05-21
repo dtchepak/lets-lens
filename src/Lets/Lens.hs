@@ -246,20 +246,21 @@ type Traversal s t a b =
 -- | Traverse both sides of a pair.
 both ::
   Traversal (a, a) (b, b) a b
-both =
-  error "todo: both"
+  -- Applicative b =>
+  -- (a -> f b) -> (a, a) -> f (b, b)
+both f (x, y) = (,) <$> f x <*> f y
 
 -- | Traverse the left side of @Either@.
 traverseLeft ::
   Traversal (Either a x) (Either b x) a b
-traverseLeft =
-  error "todo: traverseLeft"
+  -- Applicative (Either b) =>
+  -- (a -> f b) -> Either a x  -> f (Either b x)
+traverseLeft f = either (fmap Left . f) (pure . Right)
 
 -- | Traverse the right side of @Either@.
 traverseRight ::
   Traversal (Either x a) (Either x b) a b
-traverseRight =
-  error "todo: traverseRight"
+traverseRight f = either (pure . Left) (fmap Right . f)
 
 type Traversal' a b =
   Traversal a a b b
