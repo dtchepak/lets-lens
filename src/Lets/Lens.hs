@@ -255,15 +255,19 @@ traverseLeft ::
   Traversal (Either a x) (Either b x) a b
   -- Applicative (Either b) =>
   -- (a -> f b) -> Either a x  -> f (Either b x)
-traverseLeft f = either (fmap Left . f) (pure . Right)
+--traverseLeft f = either (fmap Left . f) (pure . Right)
+-- Ed recommends doing case analysis to make traversal through structure obvious:
+traverseLeft f e = case e of
+  Left a -> Left <$> f a
+  Right x -> pure (Right x)
 
 -- | Traverse the right side of @Either@.
 traverseRight ::
   Traversal (Either x a) (Either x b) a b
 traverseRight f = either (pure . Left) (fmap Right . f)
 
-type Traversal' a b =
-  Traversal a a b b
+type Traversal' s a =
+  Traversal s s a a
 
 ----
 
@@ -290,8 +294,12 @@ type Prism s t a b =
 
 _Left ::
   Prism (Either a x) (Either b x) a b
-_Left =
-  error "todo: _Left"
+  -- Choice p, Applicative f =>
+  -- p a (f b)
+  -- -> p (Either a x) (f (Either b x))
+_Left = error "todo"
+  -- _ . left
+-- traverseLeft f = either (fmap Left . f) (pure . Right)
 
 _Right ::
   Prism (Either x a) (Either x b) a b 

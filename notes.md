@@ -122,3 +122,4 @@ set l (set l s a) b = set l s b -- setting twice the same as setting once; repea
 * `over` / `Lens`: one thing; `Traversal`: zero or more things (many things); `Prism`: zero or one thing.
 * Ed: wrote this for linear alg, surprised that everyone wanted it for CRUD apps.
 * `Traversal` is generalised to any `Applicative`. `Set` and `Fold` used `Identity` and `Const` applicatives, now we're talking about any `Applicative`.
+* Using `both` traversal: `over both length ("hello", "world!") = (5, 6)`
