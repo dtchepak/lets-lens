@@ -215,7 +215,7 @@ folded ::
   Foldable f =>
   Fold (f a) (f a) a a
 folded =
-  error "todo: folded"
+  folds foldMap
 
 ----
 
@@ -225,12 +225,13 @@ type Get r s a =
   -> s
   -> Const r s
 
+-- get the `a` out of the `s`
 get ::
-  Get a s a
+  Get a s a -- ( (a -> Const a a) -> s -> Const a s )
   -> s
   -> a
-get =
-  error "todo: get"
+get g =
+  getConst . g Const
 
 ----
 

@@ -45,8 +45,8 @@ sets =
     - Works backwards from Tony's way
 
 ```
-    -- step 1: Need identity, so start with the type constructor
-    \f afb s -> Identity $ f _ s
+-- step 1: Need identity, so start with the type constructor
+\f afb s -> Identity $ f _ s
 ```
 
 * Aim of `sets` is to provide an inverse of `over`. `over l f` means given a structure `l` return a function that will update `l` with `f`. `sets f` means given a change `f` return a structure.
@@ -69,8 +69,21 @@ sets (over f) = f
 [[2,3,4],[5,6,7]]
 ```
 
-* `over` ~ `fmap`, traverse using `Identity`, `Set`
-* `foldMapOf` ~ `foldMap`, traverse using `Const`, `Fold`
+* `over` ~ `fmap`, traverse using `Identity`, `Set`. Inverse: `sets`
+* `foldMapOf` ~ `foldMap`, traverse using `Const`, `Fold`. Inverse: `folds` (see `folding` in lens lib)
+* `sets`/`fmap`/`mapped`
+* `folds`/`foldMap`/`folded`
+* Ed: if here was a combinator that worked in base (e.g. `fmap`, `foldMap`), worked that into lens.
+* `foldMapOf l f`: at `l`, do `f` and fold result using monoid instance.
 
+```
+λ> over traverse (+1) [1,2,3]
+[2,3,4]
+λ> foldMapOf traverse Sum [1,2,3]
+Sum {getSum = 6}
+```
+
+* `Get` is `Fold` without the `Monoid` constraint.
+* In lens library, `Get` = `View` (to avoid naming clash with other libs (store/state?)). This is also why `put` became `over`.
 
 
