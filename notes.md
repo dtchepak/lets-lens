@@ -135,4 +135,131 @@ fromList [(1,"a"),(2,"b"),(3,"X")]
 fromList [(1,"a"),(2,"b")]
 ```
 
+## Ed lecture
+
+After afternoon tea. Translating this to the lens library.
+
+```
+-- idiomatic in lens lib: flipped fmap:
+<&> :: Functor f => f a -> (a -> b) -> f b
+(<&>) = flip fmap
+
+p (Map.lookup k m) <&> \case ->
+    Just v -> Map.insert k v m
+    Nothing -> Map.delete k m
+```
+
+Functions tend to be big, so `<$>` lets us flow those out to the right hand side.
+
+```
+type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
+type Traversal s t a b = forall f. Applicative f => (a -> f b) -> s -> f t
+
+-- We currently have this in the exercises:
+type Getter r s a = (a -> Const r a) -> s -> Const r s
+-- In Lens lib, we would like to move this to a constraint like the others.
+class Contravariant f where
+    -- Laws:
+    -- contramap id = id
+    -- contramap f . contramap g = contramap (g . f)
+    contramap :: (a -> b) -> f b -> f a
+-- example Contravariant functor:
+data Predicate a => Predicate (a -> Bool)
+-- So we can do:
+type Getter s a = forall f. (Functor f, Contravariant f) => (a -> f a) -> s -> f s
+-- functor and contravariant functor means we can't use the arg, can only be Const
+-- Similarly:
+type Fold s a = forall f. (Applicative f, Contravariant f) => (a -> f a) -> s -> f s
+
+
+-- This lets us be a bit more generic
+type Getter s a = forall f. (Functor f, Contravariant f)   => (a -> f a) -> s -> f s
+type Lens s t a b = forall f. Functor f                    => (a -> f b) -> s -> f t
+type Fold s a = forall f. (Applicative f, Contravariant f) => (a -> f a) -> s -> f s
+type Traversal s t a b = forall f. Applicative f           => (a -> f b) -> s -> f t
+
+-- We wanted opposite of Lens (Prism). This wasn't enough to get them. Needed to
+-- "mangle" the `a -> f b` arrow, using profunctor.
+type Prism s t a b = forall p f. (Choice p, Applicative f) => p a (f b) -> p s (f t)
+type Iso s t a b = forall p f. (Profunctor p, Functor f)   => p a (f b) -> p s (f t)
+
+class Profunctor p where
+    -- Laws:
+    -- dimap id f . dimap id g = dimap id (f . g)       <- like functor law
+    -- dimap f id . dimap g id = dimap (g . f) id       <- like contravariant law
+    -- dimap id id = id
+    dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
+    -- can map forward on the result (c->d), backwards on arg (a->b)  (contravariant)
+
+instance Profunctor (->) where
+    -- For p = (->):
+    --  dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
+    --  dimap :: (a -> b) -> (c -> d) -> ((->) b c) -> ((->) a d)
+    dimap :: (a -> b) -> (c -> d) -> (b -> c) -> a -> d
+    dimap ab cd bc = cd . bc . ab
+
+newtype Kleisli m a b = Kleisli (a -> m b)
+
+-- For Isomorphism, wanted:
+type Iso s t a b = (s -> a, b -> t)
+-- But have to fit into `Iso s t a b` mold we're using to get lens compatibility:
+type Iso s t a b = forall p f. (Profunctor p, Functor f)   => p a (f b) -> p s (f t)
+
+-- Now we can do:
+iso :: (s -> a) -> (b -> t) -> Iso s t a b
+-- sa :: s -> a
+-- bt :: b -> t
+-- pafb :: p a (f b)
+-- ? :: p s (f t)
+iso sa bt pafb = dimap sa (fmap bt) pafb
+-- Reduces to: iso sa bt = dimap sa (fmap bt)
+
+
+--       getter         setter            lens
+lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
+lens sa sbt = sbt s <$>  f (sa s)
+
+-- compare with iso
+iso ::  (s -> a) -> (b -> t)      -> Iso s t a b
+lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
+-- do not need the `s` in the `s -> b -> t` update
+
+-- Another way to view a lens:
+--   Lens' s a = exists c. s <-> (a, c)
+-- There exists something c so that s can be split into the a parts i'm interested in
+-- and the c stuff that i'm not, and then can reassemble back into a t.
+--   Lens' s a = exists c. s <-> (a, c), (b, c) -> t
+-- "iso view" of lens?
+
+-- 3 ways to view a lens: our functor view, the getter/setter view, and the iso view
+-- With Iso we're saying c is trivial, we don't need it.
+
+-- Now for prisms:
+-- Lens' s a = exists c. s <-> (a, c)               <- this is for products, a * c
+-- Prism' s a = exists c. s <-> Either a c          <- this is for sums, a + c
+-- could use maybe here ^, but if we want `t` then need either
+-- Prism s t a b = exists c. (s -> Either a c, Either b c -> t)
+```
+
+Aside: this is a bit simpler in Purescript, because for GHC we wanted to be able to define lens stuff without importing all the packages. Things like Choice are coming in later GHC so we can improve this. (?)
+
+Digression into positive and negative position of args.
+```
+newtype Cont r a = Cont ((a -> r) -> r) deriving Functor
+    -- can define fmap for this
+    -- because a in positive position.
+    -- not for r, r is in positive (output) and negative position (input)
+```
+
+Prisms are really good for JSON docs.
+
+See photo (21 May 2018) of lens lattice for how these things compose.
+
+Plated lets us define specific traversals over a structure (?). (Plate comes from trying to eliminate "boilerPLATE". E.g. uniplate, biplate)
+
+Names in lens are "pun-driven development". Example: started with View which is our version of Get. First item is `preview`. Should be able to build a traversal of first item, so `pre . view` gives us `preview`. Also: `fusing` function to eliminate multiple fmap calls, then traversal version is `confusing` (suits the horrifying type signature :) ).
+
+
+
+
 

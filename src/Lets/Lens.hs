@@ -338,6 +338,17 @@ prism bt sta =
   error "TODO, argh!"
   --dimap sta (bt <$>)
 -- dimap :: (s -> a) -> (b -> t) -> p a b -> p s t
+--
+{-
+Tony's solution: (got stuck for a while, hooray, it happens to everyone!)
+
+prism ::
+  (b -> t)
+  -> (s -> Either t a)
+  -> Prism s t a b
+prism to fr = 
+  dimap fr (either pure (fmap to)) . right undefined
+-}
 
 _Just ::
   Prism (Maybe a) (Maybe b) a b
