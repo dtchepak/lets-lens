@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 
 module Lets.Lens (
   fmapT
@@ -71,6 +72,10 @@ module Lets.Lens (
 , intOrIntP
 , intOrP
 , intOrLengthEven
+-- sample
+, Person'(..)
+, clive
+, personStrings
 ) where
 
 import Control.Applicative(Applicative((<*>), pure))
@@ -78,7 +83,7 @@ import Data.Char(toUpper)
 import Data.Foldable(Foldable(foldMap))
 import Data.Functor((<$>))
 import Data.Map(Map)
-import qualified Data.Map as Map(insert, delete, lookup)
+import qualified Data.Map as Map(insert, delete, lookup, alter)
 import Data.Monoid(Monoid)
 import qualified Data.Set as Set(Set, insert, delete, member)
 import Data.Traversable(Traversable(traverse))
@@ -264,10 +269,25 @@ traverseLeft f e = case e of
 -- | Traverse the right side of @Either@.
 traverseRight ::
   Traversal (Either x a) (Either x b) a b
-traverseRight f = either (pure . Left) (fmap Right . f)
+-- traverseRight f = either (pure . Left) (fmap Right . f)
+-- Or as Ed points out:
+traverseRight = traverse
 
 type Traversal' s a =
   Traversal s s a a
+
+data Person' = Person' String String String Int deriving (Show, Eq)
+clive :: Person'
+clive = Person' "Clive" "Cliveson" "Mr" 42
+personStrings :: Traversal Person' Person' String String
+-- Applicative f => (String -> f String) -> Person' -> f Person'
+personStrings k (Person' f l title age) =
+  (\f' l' t' -> Person' f' l' t' age) <$> k f <*> k l <*> k title
+  -- Can also do:
+  --     Person' <$> k f <*> k l <*> k title pure age
+  -- But lens lib tends to do the former way so it doesn't need to use applicative in age.
+
+-- Example: over personStrings reverse clive
 
 ----
 
@@ -297,21 +317,27 @@ _Left ::
   -- Choice p, Applicative f =>
   -- p a (f b)
   -- -> p (Either a x) (f (Either b x))
-_Left = error "todo"
-  -- _ . left
--- traverseLeft f = either (fmap Left . f) (pure . Right)
+_Left =
+  let f (Left fb) = Left <$> fb
+      f (Right x) = pure (Right x)
+  in dimap id f . left
 
 _Right ::
   Prism (Either x a) (Either x b) a b 
+  -- .. => p a (f b) -> p (Either x a) (f (Either x b))
 _Right =
-  error "todo: _Right"
+  let f (Left x) = pure (Left x)
+      f (Right fb) = Right <$> fb
+  in dimap id f . right
 
 prism ::
   (b -> t)
   -> (s -> Either t a)
-  -> Prism s t a b
-prism =
-  error "todo: prism"
+  -> Prism s t a b -- forall p f. (Choice p, Applicative f) => p a (f b) -> p s (f t)
+prism bt sta =
+  error "TODO, argh!"
+  --dimap sta (bt <$>)
+-- dimap :: (s -> a) -> (b -> t) -> p a b -> p s t
 
 _Just ::
   Prism (Maybe a) (Maybe b) a b
@@ -358,8 +384,8 @@ modify ::
   -> (a -> b)
   -> s
   -> t
-modify _ _ _ =
-  error "todo: modify"
+modify =
+  over
 
 -- | An alias for @modify@.
 (%~) ::
@@ -436,8 +462,9 @@ infixl 5 |=
 -- (30,"abc")
 fstL ::
   Lens (a, x) (b, x) a b
-fstL =
-  error "todo: fstL"
+  -- Functor => (a -> f b) -> (a, x) -> f (b, x)
+fstL f (a, x) =
+  (, x) <$> f a
 
 -- |
 --
@@ -445,8 +472,8 @@ fstL =
 -- (13,"abcdef")
 sndL ::
   Lens (x, a) (x, b) a b
-sndL =
-  error "todo: sndL"
+sndL f (x, a) =
+  (x,) <$> f a
 
 -- |
 --
@@ -471,8 +498,11 @@ mapL ::
   Ord k =>
   k
   -> Lens (Map k v) (Map k v) (Maybe v) (Maybe v)
-mapL =
-  error "todo: mapL"
+  -- Functor f => (Maybe v -> f (Maybe v)) -> Map k v -> f (Map k v)
+mapL k f m =
+  let mod (Just x) = Map.insert k x m
+      mod Nothing = Map.delete k m
+  in mod <$> f (k `Map.lookup` m)
 
 -- |
 --
@@ -494,11 +524,25 @@ mapL =
 -- >>> set (setL 33) (Set.fromList [1..5]) False
 -- fromList [1,2,3,4,5]
 setL ::
+-- Set.member, Set.insert, Set.delete
   Ord k =>
   k
   -> Lens (Set.Set k) (Set.Set k) Bool Bool
-setL =
-  error "todo: setL"
+  -- Functor f => k -> (Bool -> f Bool) -> Set.Set k -> f (Set.Set k)
+setL k f set =
+  bool (Set.delete k set) (Set.insert k set) <$> f (k `Set.member` set)
+{-
+  let mod True = Set.insert k set
+      mod False = Set.delete k set
+  in mod <$> f (k `Set.member` set)
+-}
+
+{-
+λ> over (setL 4) not (Set.fromList [1])
+fromList [1,4]
+λ> over (setL 4) not (Set.fromList [1,4])
+fromList [1]
+ -}
 
 -- |
 --
@@ -511,8 +555,16 @@ compose ::
   Lens s t a b
   -> Lens q r s t
   -> Lens q r a b
-compose _ _ =
-  error "todo: compose"
+  -- ((a -> f b) -> s -> f t)
+  -- -> ((s -> f t) -> q -> f r)
+  -- -> (a -> f b) -> q -> f r
+compose f g =
+  g . f
+-- = \f g afb q = g (f afb) q
+--        Note: f afb :: s -> f t
+-- = \f g afb = g (f afb)
+-- = \f g afb = (g . f) afb
+-- = \f g = (g . f)
 
 -- | An alias for @compose@.
 (|.) ::
@@ -533,8 +585,8 @@ infixr 9 |.
 -- 4
 identity ::
   Lens a b a b
-identity =
-  error "todo: identity"
+  -- Functor f => (a -> f b) -> a -> f b
+identity = id
 
 -- |
 --

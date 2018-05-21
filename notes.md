@@ -123,3 +123,16 @@ set l (set l s a) b = set l s b -- setting twice the same as setting once; repea
 * Ed: wrote this for linear alg, surprised that everyone wanted it for CRUD apps.
 * `Traversal` is generalised to any `Applicative`. `Set` and `Fold` used `Identity` and `Const` applicatives, now we're talking about any `Applicative`.
 * Using `both` traversal: `over both length ("hello", "world!") = (5, 6)`
+* Pattern for traversals: go into structure, and map into the value we're interested in. Otherwise just pass through and ignore (rebuild). See `traverseLeft`/`traverseRight`.
+* See `personStrings` example in `Lens.hs`.
+* Lens is a slightly better traversal. Everywhere you can use a traversal you can use a lens.
+* `mapL`: aim is to make `Map.lookup` return whatever the user is asking for. So if we `set` key `3` to `Just "X"`, then future `lookup 3`  should return `Just "X"`. If we set it to `Nothing`, then future `lookup 3` should return `Nothing`.
+
+```
+λ> set (mapL 3) (Map.fromList [(1, "a"), (2, "b"), (3,"c")]) (Just "X")
+fromList [(1,"a"),(2,"b"),(3,"X")]
+λ> set (mapL 3) (Map.fromList [(1, "a"), (2, "b"), (3,"c")]) Nothing
+fromList [(1,"a"),(2,"b")]
+```
+
+
