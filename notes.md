@@ -260,6 +260,6 @@ Plated lets us define specific traversals over a structure (?). (Plate comes fro
 Names in lens are "pun-driven development". Example: started with View which is our version of Get. First item is `preview`. Should be able to build a traversal of first item, so `pre . view` gives us `preview`. Also: `fusing` function to eliminate multiple fmap calls, then traversal version is `confusing` (suits the horrifying type signature :) ).
 
 
-
+Quick tour of `makePrisms`, `makeLenses` and `makeClassy` for template haskell. e.g. `makeClassy ''Persan` which generates `HasPerson` typeclass, including delegating for hierarchies. There's also `makeFields` (class for each field, `HasFirstName` for example) but Ed doesn't recommend this (clashes with `makeClassy`, is a bit messy).
 
 
