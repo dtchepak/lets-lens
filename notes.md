@@ -263,3 +263,9 @@ Names in lens are "pun-driven development". Example: started with View which is 
 Quick tour of `makePrisms`, `makeLenses` and `makeClassy` for template haskell. e.g. `makeClassy ''Persan` which generates `HasPerson` typeclass, including delegating for hierarchies. There's also `makeFields` (class for each field, `HasFirstName` for example) but Ed doesn't recommend this (clashes with `makeClassy`, is a bit messy).
 
 
+Audience Q: prism clarification.
+Answer: Prisms handle 0 or 1. Each `Json` has a `JsonString` data constructor. If i have a `Json` i have 0 or one `JsonString`. Prism will handle this. If we had `(String, Int)` instead, we always have 1 `String`, so can use Lens. Prism's handle "does this have a String?". 
+
+Cons prism example. All lists _may_ have a single head an tail. Otherwise it is `[]`. So this is a prism.
+
+Aside: GHC pattern synonyms. (as of 7.10). Useful for defining prisms.
