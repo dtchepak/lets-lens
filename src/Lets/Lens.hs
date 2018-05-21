@@ -106,12 +106,14 @@ import Prelude hiding (product)
 --
 -- /Reminder:/ fmap :: Functor t => (a -> b) -> t a -> t b
 fmapT ::
-  Traversable t =>
+  Traversable t =>  -- Traversable is Functor; but don't cheat, use Identity
   (a -> b)
   -> t a
   -> t b
-fmapT =
-  error "todo: fmapT"
+fmapT f =
+  getIdentity . traverse (Identity . f)
+  -- Can also just use: fmap f
+  -- As Traversable is also Functor
 
 -- | Let's refactor out the call to @traverse@ as an argument to @fmapT@.
 over :: 
@@ -119,8 +121,8 @@ over ::
   -> (a -> b)
   -> s
   -> t
-over =
-  error "todo: over"
+over o f =
+  getIdentity . o (Identity . f)
 
 -- | Here is @fmapT@ again, passing @traverse@ to @over@.
 fmapTAgain ::
@@ -129,7 +131,7 @@ fmapTAgain ::
   -> t a
   -> t b
 fmapTAgain =
-  error "todo: fmapTAgain"
+  over traverse
 
 -- | Let's create a type-alias for this type of function.
 type Set s t a b =
@@ -141,23 +143,24 @@ type Set s t a b =
 -- unwrapping.
 sets ::
   ((a -> b) -> s -> t)
-  -> Set s t a b  
-sets =
-  error "todo: sets"
+  -> Set s t a b   -- ((a->b) -> s -> t) -> (a -> Identity b) -> s -> Identity t
+sets f afb =
+    Identity . f (getIdentity . afb)
 
 mapped ::
   Functor f =>
-  Set (f a) (f b) a b
+  Set (f a) (f b) a b -- ((a->b) -> s -> t) -> (a -> Identity b) -> s -> Identity t
 mapped =
-  error "todo: mapped"
+  sets fmap
 
+-- Hint: use @over@
 set ::
   Set s t a b
   -> s
   -> b
   -> t
-set =
-  error "todo: set"
+set st s b =
+  over st (const b) s
 
 ----
 
@@ -169,8 +172,8 @@ foldMapT ::
   (a -> b)
   -> t a
   -> b
-foldMapT =
-  error "todo: foldMapT"
+foldMapT f =
+  getConst . traverse (Const . f)
 
 -- | Let's refactor out the call to @traverse@ as an argument to @foldMapT@.
 foldMapOf ::
@@ -178,8 +181,8 @@ foldMapOf ::
   -> (a -> r)
   -> s
   -> r
-foldMapOf =
-  error "todo: foldMapOf"
+foldMapOf t f =
+  getConst . t (Const . f)
 
 -- | Here is @foldMapT@ again, passing @traverse@ to @foldMapOf@.
 foldMapTAgain ::
@@ -188,7 +191,7 @@ foldMapTAgain ::
   -> t a
   -> b
 foldMapTAgain =
-  error "todo: foldMapTAgain"
+  foldMapOf traverse
 
 -- | Let's create a type-alias for this type of function.
 type Fold s t a b =
@@ -205,8 +208,8 @@ folds ::
   -> (a -> Const b a)
   -> s
   -> Const t s
-folds =
-  error "todo: folds"
+folds f afb =
+  Const . f (getConst . afb)
 
 folded ::
   Foldable f =>

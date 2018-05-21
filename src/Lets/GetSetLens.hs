@@ -142,8 +142,9 @@ modify ::
   -> (b -> b)
   -> a
   -> a
-modify =
-  error "todo: modify"
+modify l f =
+  set l <*> f . get l
+  -- \a -> set l a (f (get l a))
 
 -- | An alias for @modify@.
 (%~) ::
