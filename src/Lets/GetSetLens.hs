@@ -54,8 +54,8 @@ import Prelude hiding (product)
 
 data Lens a b =
   Lens
-    (a -> b -> a)
-    (a -> b)
+    (a -> b -> a) -- setter
+    (a -> b)      -- getter
 
 -- |
 --
@@ -142,8 +142,9 @@ modify ::
   -> (b -> b)
   -> a
   -> a
-modify =
-  error "todo: modify"
+modify l f =
+  set l <*> (f . get l)
+--  set l a (f (get l a))
 
 -- | An alias for @modify@.
 (%~) ::
@@ -173,7 +174,7 @@ infixr 4 %~
   -> a
   -> a
 (.~) =
-  error "todo: (.~)"
+  flip . set
 
 infixl 5 .~
 
@@ -193,8 +194,8 @@ fmodify ::
   -> (b -> f b)
   -> a
   -> f a
-fmodify =
-  error "todo: fmodify"
+fmodify l f a =
+    set l a <$> (f (get l a))
 
 -- |
 --
@@ -209,8 +210,8 @@ fmodify =
   -> f b
   -> a
   -> f a
-(|=) =
-  error "todo: (|=)"
+(|=) l =
+  fmodify l . const
 
 infixl 5 |=
 

@@ -1,8 +1,10 @@
 *~
 *#*
+.ghc.environment.*
 
 # CABAL
 /dist
+/dist-newstyle
 /cabal-dev
 /.cabal-sandbox
 /cabal.sandbox.config
