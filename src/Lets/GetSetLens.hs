@@ -314,7 +314,7 @@ compose ::
   -> Lens a c
 compose f g =
   Lens
-    (\a c -> modify g (flip (set f) c) a)
+    (\a -> set g a . set f (get g a))
     (get f . get g)
 
 -- | An alias for @compose@.
