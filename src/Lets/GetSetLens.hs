@@ -88,7 +88,7 @@ get (Lens _ g) =
 -- prop> let types = (x :: Int, y :: String) in set sndL (x, y) z == (x, z)
 set ::
   Lens a b
-  -> a 
+  -> a
   -> b
   -> a
 set (Lens s _) a =
@@ -102,7 +102,7 @@ getsetLaw ::
   -> Bool
 getsetLaw l =
   \a -> set l a (get l a) == a
-  
+
 -- | The set/get law of lenses. This function should always return @True@.
 setgetLaw ::
   Eq b =>
@@ -112,7 +112,7 @@ setgetLaw ::
   -> Bool
 setgetLaw l a b =
   get l (set l a b) == b
-  
+
 -- | The set/set law of lenses. This function should always return @True@.
 setsetLaw ::
   Eq a =>
@@ -195,7 +195,7 @@ fmodify ::
   -> a
   -> f a
 fmodify l f a =
-    set l a <$> (f (get l a))
+    set l a <$> f (get l a)
 
 -- |
 --
@@ -228,7 +228,7 @@ infixl 5 |=
 fstL ::
   Lens (x, y) x
 fstL =
-  error "todo: fstL"
+  Lens (\(_, y) x' -> (x', y)) fst
 
 -- |
 --
@@ -243,7 +243,7 @@ fstL =
 sndL ::
   Lens (x, y) y
 sndL =
-  error "todo: sndL"
+  Lens (\(x, _) y' -> (x, y')) snd
 
 -- |
 --
@@ -268,8 +268,10 @@ mapL ::
   Ord k =>
   k
   -> Lens (Map k v) (Maybe v)
-mapL =
-  error "todo: mapL"
+mapL k =
+  Lens
+    (maybe . Map.delete k <*> flip (Map.insert k))
+    (Map.lookup k)
 
 -- |
 --
@@ -294,8 +296,10 @@ setL ::
   Ord k =>
   k
   -> Lens (Set k) Bool
-setL =
-  error "todo: setL"
+setL k =
+  Lens
+    (bool . Set.delete k <*> Set.insert k)
+    (Set.member k)
 
 -- |
 --
@@ -308,8 +312,10 @@ compose ::
   Lens b c
   -> Lens a b
   -> Lens a c
-compose =
-  error "todo: compose"
+compose f g =
+  Lens
+    (\a c -> modify g (flip (set f) c) a)
+    (get f . get g)
 
 -- | An alias for @compose@.
 (|.) ::
@@ -503,7 +509,7 @@ setCityAndLocality ::
   (Person, Address) -> (String, Locality) -> (Person, Address)
 setCityAndLocality =
   error "todo: setCityAndLocality"
-  
+
 -- |
 --
 -- >>> getSuburbOrCity (Left maryAddress)
