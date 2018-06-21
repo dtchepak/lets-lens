@@ -194,8 +194,10 @@ fmodify ::
   -> (b -> f b)
   -> a
   -> f a
-fmodify l f a =
-    set l a <$> f (get l a)
+fmodify (Lens set get) f a =
+    set a <$> (f . get) a
+--    fmap . set <*> f . get
+
 
 -- |
 --
@@ -337,7 +339,9 @@ infixr 9 |.
 identity ::
   Lens a a
 identity =
-  error "todo: identity"
+  Lens
+    (flip const)
+    id
 
 -- |
 --
@@ -350,8 +354,10 @@ product ::
   Lens a b
   -> Lens c d
   -> Lens (a, c) (b, d)
-product =
-  error "todo: product"
+product (Lens s0 g0) (Lens s1 g1) =
+  Lens
+    (\(a,c) (b,d) -> (s0 a b, s1 c d))
+    (\(a,c) -> (g0 a, g1 c))
 
 -- | An alias for @product@.
 (***) ::
