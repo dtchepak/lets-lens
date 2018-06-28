@@ -77,14 +77,33 @@ mapS ::
   (a -> b)
   -> Store s a
   -> Store s b
-mapS =
-  error "todo: mapS"
+mapS f (Store a b) =
+  Store (f <$> a) b
+  -- Store (f . a) b
 
 duplicateS ::
   Store s a
   -> Store s (Store s a)
-duplicateS =
-  error "todo: duplicateS"
+duplicateS (Store s g) =
+   Store (Store s) g
+
+{-
+-- Incorrect:
+duplicateS s =
+= mapS (const s) s
+
+duplicateS (Store s g)
+= Store ( (const (Store s g)) <$> s ) g
+= Store (\x ->  const (Store s g) (s x)) g
+= Store (\x -> Store s g) g
+-- ignores `x` ^
+
+-- Correct:
+duplicateS (Store s g)
+= Store (Store s) g
+= Store (\x -> Store s x) g
+-- uses `x` ^
+-}
 
 extendS ::
   (Store s a -> b)
