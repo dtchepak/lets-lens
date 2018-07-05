@@ -84,8 +84,9 @@ mapS f (Store a b) =
 duplicateS ::
   Store s a
   -> Store s (Store s a)
-duplicateS (Store s g) =
-   Store (Store s) g
+duplicateS =
+  extendS id
+  -- Store (Store s) g
 
 {-
 -- Incorrect:
@@ -103,14 +104,23 @@ duplicateS (Store s g)
 = Store (Store s) g
 = Store (\x -> Store s x) g
 -- uses `x` ^
+
+-- With extend:
+duplicateS (Store s g)
+= extendS id
+= Store (id . Store s) g
+= Store (\x -> id (Store s x)) g
+= Store (\x -> Store s x) g
+= Store (Store s) g
+= original duplicateS
 -}
 
 extendS ::
   (Store s a -> b)
   -> Store s a
   -> Store s b
-extendS =
-  error "todo: extendS"
+extendS f (Store s g) =
+  Store (f . Store s) g
 
 extractS ::
   Store s a
