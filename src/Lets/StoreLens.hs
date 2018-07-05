@@ -125,8 +125,8 @@ extendS f (Store s g) =
 extractS ::
   Store s a
   -> a
-extractS =
-  error "todo: extractS"
+extractS (Store s g) =
+  s g
 
 ----
 
