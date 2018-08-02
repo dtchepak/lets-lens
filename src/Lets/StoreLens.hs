@@ -54,6 +54,9 @@ import qualified Data.Set as Set(insert, delete, member)
 import Lets.Data(Store(Store), Person(Person), Locality(Locality), Address(Address), bool)
 import Prelude hiding (product)
 
+-- My imports
+import qualified Lets.Data as I(Identity(..), getIdentity)
+
 -- $setup
 -- >>> import qualified Data.Map as Map(fromList)
 -- >>> import qualified Data.Set as Set(fromList)
@@ -86,6 +89,7 @@ duplicateS ::
   -> Store s (Store s a)
 duplicateS =
   extendS id
+  -- Without extendS:
   -- Store (Store s) g
 
 {-
@@ -121,6 +125,11 @@ extendS ::
   -> Store s b
 extendS f (Store s g) =
   Store (f . Store s) g
+
+-- extendS in terms of mapS and duplicateS:
+--
+--extendS f =
+--      mapS f . duplicateS
 
 extractS ::
   Store s a
@@ -219,8 +228,12 @@ modify ::
   -> (b -> b)
   -> a
   -> a
-modify =
-  error "todo: modify"
+modify l f = I.getIdentity . fmodify l (I.Identity . f)
+{- -- Original version:
+modify (Lens l) f a =
+  let Store sa b = l a
+  in  sa (f b)
+-}
 
 -- | An alias for @modify@.
 (%~) ::
@@ -250,7 +263,34 @@ infixr 4 %~
   -> a
   -> a
 (.~) =
-  error "todo: (.~)"
+  flip . set
+
+{-
+set (Lens r) = setS . r
+
+(.~) (Lens r) x y
+    = flip (set (Lens r)) x y
+    = flip (setS . r) x y
+    = (setS . r) y x
+    = (\w -> setS (r w)) y x
+    = (setS (r y)) x
+    = (let Store sa _ = r y
+      in sa) x
+    = let Store sa _ = r y
+      in sa x
+
+(.~) (Lens r) x y
+    = (modify (Lens r) . const) x y
+    = (\w -> modify (Lens r) (const w)) x y
+    = (modify (Lens r) (const x)) y
+    = modify (Lens r) (const x) y
+    = let Store sa b = r y
+      in sa (const x b)
+    = let Store sa _ = r y
+      in sa x
+
+Therefore equivalent.
+ -}
 
 infixl 5 .~
 
@@ -270,9 +310,10 @@ fmodify ::
   -> (b -> f b)
   -> a
   -> f a
-fmodify =
-  error "todo: fmodify"
-  
+fmodify (Lens l) f a =
+  let Store ba b = l a
+  in ba <$> f b
+
 -- |
 --
 -- >>> fstL |= Just 3 $ (7, "abc")
