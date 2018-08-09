@@ -327,8 +327,8 @@ fmodify (Lens l) f a =
   -> f b
   -> a
   -> f a
-(|=) =
-  error "todo: (|=)"
+(|=) l =
+  fmodify l . const
 
 infixl 5 |=
 
@@ -344,8 +344,7 @@ infixl 5 |=
 -- prop> let types = (x :: Int, y :: String) in setsetLaw fstL (x, y) z
 fstL ::
   Lens (x, y) x
-fstL =
-  error "todo: fstL"
+fstL = Lens (\(x,y) -> Store (\x' -> (x',y)) x)
 
 -- |
 --
@@ -359,8 +358,7 @@ fstL =
 -- prop> let types = (x :: Int, y :: String) in setsetLaw sndL (x, y) z
 sndL ::
   Lens (x, y) y
-sndL =
-  error "todo: sndL"
+sndL = Lens (\(x,y) -> Store (\y' -> (x,y')) y)
 
 -- |
 --
@@ -385,8 +383,10 @@ mapL ::
   Ord k =>
   k
   -> Lens (Map k v) (Maybe v)
-mapL =
-  error "todo: mapL"
+mapL k =
+  Lens $ \m ->
+    Store (maybe (Map.delete k m) (\v -> Map.insert k v m))
+    (Map.lookup k m)
 
 -- |
 --
