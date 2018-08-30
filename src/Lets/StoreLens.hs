@@ -411,8 +411,15 @@ setL ::
   Ord k =>
   k
   -> Lens (Set k) Bool
-setL =
-  error "todo: setL"
+setL k =
+    -- based on answers:
+    Lens $
+        Store <$> (bool . Set.delete k <*> Set.insert k) <*> Set.member k
+{- Original:
+  Lens $ \s ->
+    (Store (bool (Set.delete k s) (Set.insert k s)))
+    (Set.member k s)
+-}
 
 -- |
 --
@@ -425,8 +432,12 @@ compose ::
   Lens b c
   -> Lens a b
   -> Lens a c
-compose =
-  error "todo: compose"
+compose bc ab =
+  Lens $ \a ->
+    Store
+        (set ab a . set bc (get ab a))
+        (get bc . get ab $ a)
+-- TODO: compare with answers
 
 -- | An alias for @compose@.
 (|.) ::
