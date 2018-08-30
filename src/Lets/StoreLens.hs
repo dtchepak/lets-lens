@@ -439,6 +439,17 @@ compose bc ab =
         (get bc . get ab $ a)
 -- TODO: compare with answers
 
+-- Based on answer:
+compose2 ::
+  Lens b c
+  -> Lens a b
+  -> Lens a c
+compose2 (Lens bc) (Lens ab) =
+  Lens $ \a ->
+    let Store ba b = ab a
+        Store cb c = bc b
+    in Store (ba . cb) c
+
 -- | An alias for @compose@.
 (|.) ::
   Lens b c
