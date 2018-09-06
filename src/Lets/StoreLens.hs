@@ -470,7 +470,7 @@ infixr 9 |.
 identity ::
   Lens a a
 identity =
-  error "todo: identity"
+  Lens $ Store id
     
 -- |
 --
@@ -483,8 +483,11 @@ product ::
   Lens a b
   -> Lens c d
   -> Lens (a, c) (b, d)
-product =
-  error "todo: product"
+product (Lens f) (Lens g) =
+  Lens $ \(a, c) ->
+    let Store ba b = f a
+        Store dc d = g c
+    in Store (\(b',d') -> (ba b', dc d')) (b, d)
 
 -- | An alias for @product@.
 (***) ::
@@ -513,8 +516,19 @@ choice ::
   Lens a x
   -> Lens b x
   -> Lens (Either a b) x
-choice =
-  error "todo: choice"
+choice (Lens f) (Lens g) =
+    Lens $ either
+        (mapS Left . f)
+        (mapS Right . g)
+{-
+  Lens $ either 
+    (\a ->
+        let Store xa x = f a
+        in Store (Left . xa) x)
+    (\b ->
+        let Store xb x = g b
+        in Store (Right . xb) x)
+-}
 
 -- | An alias for @choice@.
 (|||) ::
