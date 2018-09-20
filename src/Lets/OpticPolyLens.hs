@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, TupleSections #-}
 
 module Lets.OpticPolyLens (
   Lens(..)
@@ -72,8 +72,8 @@ set ::
   -> s
   -> b
   -> t
-set (Lens r) a b =
-  getIdentity (r (const (Identity b)) a)
+set (Lens r) s b =
+  getIdentity (r (const (Identity b)) s)
 
 -- | The get/set law of lenses. This function should always return @True@.
 getsetLaw ::
@@ -123,8 +123,8 @@ modify ::
   -> (a -> b)
   -> s
   -> t
-modify =
-  error "todo: modify"
+modify (Lens r) f =
+  getIdentity . r (Identity . f)
 
 -- | An alias for @modify@.
 (%~) ::
@@ -154,7 +154,7 @@ infixr 4 %~
   -> s
   -> t
 (.~) =
-  error "todo: (.~)"
+  flip . set
 
 infixl 5 .~
 
@@ -174,8 +174,8 @@ fmodify ::
   -> (a -> f b)
   -> s
   -> f t 
-fmodify =
-  error "todo: fmodify"
+fmodify (Lens r)  =
+  r
 
 -- |
 --
@@ -190,8 +190,8 @@ fmodify =
   -> f b
   -> s
   -> f t
-(|=) =
-  error "todo: (|=)"
+(|=) l =
+  fmodify l . const
 
 infixl 5 |=
 
@@ -207,8 +207,10 @@ infixl 5 |=
 -- prop> let types = (x :: Int, y :: String) in setsetLaw fstL (x, y) z
 fstL ::
   Lens (a, x) (b, x) a b
+  --      s      t   a b
 fstL =
-  error "todo: fstL"
+  Lens $
+    \afb (a, x) -> (,x) <$> afb a
 
 -- |
 --
@@ -223,7 +225,8 @@ fstL =
 sndL ::
   Lens (x, a) (x, b) a b
 sndL =
-  error "todo: sndL"
+  Lens $
+    \afb (x, a) -> (x, ) <$> afb a
 
 -- |
 --
