@@ -303,8 +303,9 @@ compose ::
   Lens s t a b
   -> Lens q r s t
   -> Lens q r a b
-compose =
-  error "todo: compose"
+compose (Lens stab) (Lens qrst) =
+  Lens $ qrst . stab
+--    \afb q -> qrst (stab afb) q
 
 -- | An alias for @compose@.
 (|.) ::
