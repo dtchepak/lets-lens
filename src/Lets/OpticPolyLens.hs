@@ -251,8 +251,18 @@ mapL ::
   Ord k =>
   k
   -> Lens (Map k v) (Map k v) (Maybe v) (Maybe v)
-mapL =
-  error "todo: mapL"
+mapL k = Lens $
+    \afb m ->
+        let x = Map.lookup k m
+            deleteIfPresent = maybe m (const (Map.delete k m)) x
+            insert = flip (Map.insert k) m
+        in maybe deleteIfPresent insert <$> afb x
+
+{- Original answer, unecessary extra lookup on Map.delete if Map.lookup has 
+ - already failed:
+  \afb m ->
+    maybe (Map.delete k m) (flip (Map.insert k) m) <$> afb (Map.lookup k m)
+-}
 
 -- |
 --
@@ -277,8 +287,10 @@ setL ::
   Ord k =>
   k
   -> Lens (Set k) (Set k) Bool Bool
-setL =
-  error "todo: setL"
+setL k = Lens $
+    \afb s ->
+        let isMember = Set.member k s
+        in bool (Set.delete k s) (Set.insert k s) <$> afb isMember
 
 -- |
 --
