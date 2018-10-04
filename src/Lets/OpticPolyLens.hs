@@ -367,6 +367,10 @@ product stab qrcd = Lens $
 
 infixr 3 ***
 
+instance Bifunctor Either where
+    bimap f g =
+        either (Left . f) (Right . g)
+
 -- |
 --
 -- >>> get (choice fstL sndL) (Left ("abc", 7))
@@ -385,9 +389,9 @@ choice ::
   -> Lens q r a b
   -> Lens (Either s q) (Either t r) a b
 choice (Lens stab) (Lens qrab) = Lens $
- \f -> either (fmap Left . stab f) (fmap Right . qrab f)
-
---   \f -> either (fmap Left . fmodify stab f) (fmap Right .fmodify qrab f)
+ \f -> either (fmap Left) (fmap Right) .  bimap (stab f) (qrab f)
+-- Or: \f -> either (fmap Left . stab f) (fmap Right . qrab f)
+-- Or: \f -> either (fmap Left . fmodify stab f) (fmap Right .fmodify qrab f)
 
 -- | An alias for @choice@.
 (|||) ::
