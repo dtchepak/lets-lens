@@ -305,6 +305,7 @@ compose ::
   -> Lens q r a b
 compose (Lens stab) (Lens qrst) =
   Lens $ qrst . stab
+
 --    \afb q -> qrst (stab afb) q
 
 -- | An alias for @compose@.
@@ -326,8 +327,15 @@ infixr 9 |.
 -- 4
 identity ::
   Lens a b a b
-identity =
-  error "todo: identity"
+identity = Lens ($)
+  -- \afb a -> afb a
+  -- Or: Lens id
+
+class Bifunctor f where
+    bimap :: (a -> b) -> (c -> d) -> f a c -> f b d
+
+instance Bifunctor (,) where
+    bimap f g (a,c) = (f a, g c)
 
 -- |
 --
@@ -340,8 +348,14 @@ product ::
   Lens s t a b
   -> Lens q r c d
   -> Lens (s, q) (t, r) (a, c) (b, d)
-product =
-  error "todo: product"
+product stab qrcd = Lens $
+  \f (s, q) ->
+        bimap (set stab s) (set qrcd q) <$> f (get stab s, get qrcd q)
+{-
+product stab qrcd = Lens $
+  \f (s, q) ->
+        (\(b,d) -> (set stab s b, set qrcd q d)) <$> f (get stab s, get qrcd q)
+-}
 
 -- | An alias for @product@.
 (***) ::
@@ -370,8 +384,10 @@ choice ::
   Lens s t a b
   -> Lens q r a b
   -> Lens (Either s q) (Either t r) a b
-choice =
-  error "todo: choice"
+choice (Lens stab) (Lens qrab) = Lens $
+ \f -> either (fmap Left . stab f) (fmap Right . qrab f)
+
+--   \f -> either (fmap Left . fmodify stab f) (fmap Right .fmodify qrab f)
 
 -- | An alias for @choice@.
 (|||) ::
