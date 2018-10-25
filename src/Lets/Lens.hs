@@ -110,8 +110,9 @@ fmapT ::
   (a -> b)
   -> t a
   -> t b
-fmapT =
-  error "todo: fmapT"
+fmapT f =
+  -- Don't use `fmap f` using Traversable's functor constraint, use Identity
+  getIdentity . traverse (Identity . f)
 
 -- | Let's refactor out the call to @traverse@ as an argument to @fmapT@.
 over :: 
@@ -119,8 +120,8 @@ over ::
   -> (a -> b)
   -> s
   -> t
-over =
-  error "todo: over"
+over t f =
+  getIdentity . t (Identity . f)
 
 -- | Here is @fmapT@ again, passing @traverse@ to @over@.
 fmapTAgain ::
@@ -129,7 +130,7 @@ fmapTAgain ::
   -> t a
   -> t b
 fmapTAgain =
-  error "todo: fmapTAgain"
+  over traverse
 
 -- | Let's create a type-alias for this type of function.
 type Set s t a b =
@@ -142,22 +143,26 @@ type Set s t a b =
 sets ::
   ((a -> b) -> s -> t)
   -> Set s t a b  
-sets =
-  error "todo: sets"
+sets o f =
+  Identity . o (getIdentity . f)
 
 mapped ::
   Functor f =>
   Set (f a) (f b) a b
 mapped =
-  error "todo: mapped"
+  -- mapped :: Functor f => (a -> Identity b) -> f a -> Identity (f b)
+  -- Take 1:
+  -- mapped f = Identity . fmap (getIdentity . f)
+  -- Take 2: notice impl contains `sets`
+  sets fmap
 
 set ::
   Set s t a b
   -> s
   -> b
   -> t
-set =
-  error "todo: set"
+set setter s b =
+  over setter (const b) s
 
 ----
 
