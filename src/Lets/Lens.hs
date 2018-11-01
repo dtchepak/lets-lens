@@ -174,8 +174,8 @@ foldMapT ::
   (a -> b)
   -> t a
   -> b
-foldMapT =
-  error "todo: foldMapT"
+foldMapT f =
+  getConst . traverse (Const . f)
 
 -- | Let's refactor out the call to @traverse@ as an argument to @foldMapT@.
 foldMapOf ::
@@ -183,8 +183,8 @@ foldMapOf ::
   -> (a -> r)
   -> s
   -> r
-foldMapOf =
-  error "todo: foldMapOf"
+foldMapOf t f =
+  getConst . t (Const . f)
 
 -- | Here is @foldMapT@ again, passing @traverse@ to @foldMapOf@.
 foldMapTAgain ::
@@ -193,7 +193,7 @@ foldMapTAgain ::
   -> t a
   -> b
 foldMapTAgain =
-  error "todo: foldMapTAgain"
+  foldMapOf traverse
 
 -- | Let's create a type-alias for this type of function.
 type Fold s t a b =
@@ -210,14 +210,17 @@ folds ::
   -> (a -> Const b a)
   -> s
   -> Const t s
-folds =
-  error "todo: folds"
+folds m f =
+  Const . m (getConst . f)
 
 folded ::
   Foldable f =>
   Fold (f a) (f a) a a
+  -- Monoid r, Foldable f => (a -> Const r a) -> f a -> Const r (f a)
 folded =
-  error "todo: folded"
+  folds foldMap
+--  \f -> Const . foldMap (getConst . f)
+
 
 ----
 
