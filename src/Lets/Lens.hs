@@ -298,15 +298,16 @@ type Prism s t a b =
   p a (f b)
   -> p s (f t)
 
+--(Choice p, Applicative f) => p a (f b) -> p (Either a x) (Either b x)
 _Left ::
   Prism (Either a x) (Either b x) a b
 _Left =
-  error "todo: _Left"
+  dimap id (either (fmap Left) (pure . Right)) . left
 
 _Right ::
   Prism (Either x a) (Either x b) a b 
 _Right =
-  error "todo: _Right"
+  dimap id (either (pure . Left) (fmap Right)) . right
 
 prism ::
   (b -> t)
