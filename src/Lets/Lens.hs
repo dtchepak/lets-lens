@@ -313,8 +313,8 @@ prism ::
   (b -> t)
   -> (s -> Either t a)
   -> Prism s t a b
-prism =
-  error "todo: prism"
+prism bt g =
+    dimap g (either pure (fmap bt)) . right
 
 _Just ::
   Prism (Maybe a) (Maybe b) a b
