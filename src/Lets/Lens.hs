@@ -142,7 +142,7 @@ type Set s t a b =
 -- unwrapping.
 sets ::
   ((a -> b) -> s -> t)
-  -> Set s t a b  
+  -> Set s t a b
 sets o f =
   Identity . o (getIdentity . f)
 
@@ -298,7 +298,7 @@ type Prism s t a b =
   p a (f b)
   -> p s (f t)
 
---(Choice p, Applicative f) => p a (f b) -> p (Either a x) (Either b x)
+--(Choice p, Applicative f) => p a (f b) -> p (Either a x) (f (Either b x))
 _Left ::
   Prism (Either a x) (Either b x) a b
 _Left =
@@ -319,19 +319,28 @@ prism bt g =
 _Just ::
   Prism (Maybe a) (Maybe b) a b
 _Just =
-  error "todo: _Just"
+  prism Just (maybe (Left Nothing) Right) 
 
 _Nothing ::
   Prism (Maybe a) (Maybe a) () ()
 _Nothing =
-  error "todo: _Nothing"
+  prism (const Nothing) (maybe (Right ()) (Left . Just))
 
 setP ::
   Prism s t a b
   -> s
   -> Either t a
-setP _ _ =
-  error "todo: setP"
+-- (forall. Choice p, Applicative f => p a (f b) -> p s (f t)) -> s -> Either t a 
+-- Try (->) instance for p:
+--  ((a -> f b) -> s -> f t) -> s -> Either t a
+-- And `Either a` for `f`:
+--  ((a -> Either a b) -> s -> Either a t) -> s -> Either t a
+setP p =
+  swapEither . p Left
+-- setP p s = swapEither (p Left s)
+
+swapEither :: Either a b -> Either b a
+swapEither = either Right Left
 
 getP ::
   Prism s t a b
